@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,7 +11,8 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/exceptioon/tiktok-fav-publisher/config"
 	"github.com/exceptioon/tiktok-fav-publisher/internal"
-	"github.com/exceptioon/tiktok-fav-publisher/internal/store"
+	"github.com/exceptioon/tiktok-fav-publisher/internal/store/redis"
+	"github.com/exceptioon/tiktok-fav-publisher/internal/store/set"
 	"github.com/exceptioon/tiktok-fav-publisher/internal/tiktok"
 	"github.com/exceptioon/tiktok-fav-publisher/internal/worker"
 	"go.uber.org/zap"
@@ -21,11 +23,11 @@ func main() {
 	var (
 		conf     config.Config
 		bot      worker.Bot
-		cache    internal.Database
+		cache    internal.Cache
 		wg       sync.WaitGroup
 		tt       *tiktok.ServiceApi
 		logger   *zap.Logger
-		tick     = time.NewTicker(time.Minute + time.Second*30)
+		tick     = time.NewTicker(time.Minute)
 		quitChan chan struct{}
 		err      error
 	)
@@ -39,8 +41,16 @@ func main() {
 	})
 	bot.ChatID = conf.ChannelID
 
-	cache, err = store.NewRedisCache(conf.DBAddr)
-	panicErr(err)
+	switch conf.CacheType {
+	case config.CacheTypeRedis:
+		cache, err = redis.NewRedisCache(conf.DBAddr)
+		panicErr(err)
+	case config.CacheTypeSet:
+		cache, err = set.NewSet()
+		panicErr(err)
+	default:
+		panicErr(errors.New("not realized yet"))
+	}
 
 	logger, err = zap.NewProduction()
 	panicErr(err)

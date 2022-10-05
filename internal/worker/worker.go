@@ -20,7 +20,7 @@ type Bot struct {
 type Worker struct {
 	TikTok *tiktok.ServiceApi
 	TG     Bot
-	Cache  internal.Database
+	Cache  internal.Cache
 	WG     *sync.WaitGroup
 	Log    *zap.Logger
 	Tick   *time.Ticker
@@ -44,6 +44,7 @@ LOOP:
 				if w.Cache.IsExist(video.ID) {
 					continue
 				}
+				time.Sleep(time.Second * 5)
 				err = w.TikTok.SetVideoMetadata(&video)
 				w.Log.Info("processing video", zap.String("ID", video.ID), zap.String("url", video.ShareableLink),
 					zap.String("download", video.DownloadLink))
@@ -77,7 +78,6 @@ LOOP:
 					continue
 				}
 				w.Log.Info("sent video", zap.String("id", video.ID))
-				time.Sleep(time.Second * 10)
 			}
 
 		case <-w.QuitChan:
