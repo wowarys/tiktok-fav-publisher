@@ -1,4 +1,4 @@
-package store
+package redis
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type redisCache struct {
 	client *redis.Client
 }
 
-func NewRedisCache(addr string) (internal.Database, error) {
+func NewRedisCache(addr string) (internal.Cache, error) {
 	redis := redisCache{
 		client: redis.NewClient(&redis.Options{
 			Addr: addr,
