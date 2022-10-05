@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/exceptioon/tiktok-fav-publisher/internal"
 	"github.com/go-redis/redis/v9"
@@ -29,7 +30,14 @@ func NewRedisCache(addr string) (internal.Database, error) {
 }
 
 func (r *redisCache) Add(value string) error {
-	return r.client.SAdd(context.Background(), keySet, value).Err()
+	err := r.client.SAdd(context.Background(), keySet, value).Err()
+	if err != nil {
+		return err
+	}
+	if !r.IsExist(value) {
+		return fmt.Errorf("value %s not added", value)
+	}
+	return nil
 }
 
 func (r *redisCache) IsExist(value string) bool {
