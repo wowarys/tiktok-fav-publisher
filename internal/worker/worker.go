@@ -68,6 +68,7 @@ LOOP:
 
 				if err != nil {
 					w.Log.Error("Send video", zap.Error(err), zap.String("download url", video.DownloadLink))
+					continue
 				}
 
 				err = w.Cache.Add(video.ID)
