@@ -63,19 +63,20 @@ LOOP:
 				_, err = w.TG.Bot.Send(telebot.ChatID(w.TG.ChatID),
 					&telebot.Video{
 						File:    telebot.File{FileURL: video.DownloadLink},
-						Caption: fmt.Sprintf("@%s: %s)", video.AuthorUsername, video.Title),
+						Caption: fmt.Sprintf("@%s: %s", video.AuthorUsername, video.Title),
 					}, menu)
 
 				if err != nil {
-					w.Log.Error("Send video", zap.Error(err), zap.String("download url", video.ID))
+					w.Log.Error("Send video", zap.Error(err), zap.String("download url", video.DownloadLink))
 				}
 
 				err = w.Cache.Add(video.ID)
 				if err != nil {
 					w.Log.Error("Add to cache", zap.Error(err))
+					continue
 				}
 				w.Log.Info("sent video", zap.String("id", video.ID))
-				time.Sleep(time.Second * 2)
+				time.Sleep(time.Second * 10)
 			}
 
 		case <-w.QuitChan:
