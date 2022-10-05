@@ -3,6 +3,8 @@ package tiktok
 import (
 	"fmt"
 	"testing"
+
+	"go.uber.org/zap"
 )
 
 func assert(t testing.TB, expected bool, args ...interface{}) {
@@ -32,7 +34,9 @@ func TestGetLikedVideos(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tt := NewServiceApi(test.name, test.count)
+			logger, err := zap.NewProduction()
+			assert(t, err == nil)
+			tt := NewServiceApi(test.name, test.count, logger)
 			videos, err := tt.GetLikedVideos()
 			assert(t, err == nil, err)
 			assert(t, test.count == len(videos), fmt.Sprintf("expected: %d, got: %d", test.count, len(videos)))

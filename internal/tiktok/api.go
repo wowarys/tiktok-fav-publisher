@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/valyala/fasthttp"
+	"go.uber.org/zap"
 )
 
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
 
 type ServiceApi struct {
+	Log        *zap.Logger
 	username   string
 	count      int
 	hdDownload int
@@ -48,9 +49,10 @@ type videoInfoResponse struct {
 	}
 }
 
-func NewServiceApi(username string, count int) *ServiceApi {
+func NewServiceApi(username string, count int, logger *zap.Logger) *ServiceApi {
 	username = strings.TrimLeft(username, "@")
 	return &ServiceApi{
+		Log:        logger,
 		username:   username,
 		count:      count,
 		userAgent:  userAgent,
@@ -80,7 +82,7 @@ func (sa *ServiceApi) GetLikedVideos() (Videos, error) {
 	}
 
 	if response.Message != "success" {
-		log.Println(string(res.Body()))
+		sa.Log.Error("not success message", zap.String("response", string(res.Body())))
 		return nil, errors.New("not success message")
 	}
 
@@ -113,6 +115,7 @@ func (sa *ServiceApi) SetVideoMetadata(video *Video) error {
 	}
 
 	if result.Message != "success" {
+		sa.Log.Error("not success message", zap.String("response", string(res.Body())))
 		return errors.New("not success message")
 	}
 
