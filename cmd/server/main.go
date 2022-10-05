@@ -25,7 +25,7 @@ func main() {
 		wg       sync.WaitGroup
 		tt       *tiktok.ServiceApi
 		logger   *zap.Logger
-		tick     = time.NewTicker(time.Minute)
+		tick     = time.NewTicker(time.Minute + time.Second*30)
 		quitChan chan struct{}
 		err      error
 	)
@@ -42,10 +42,10 @@ func main() {
 	cache, err = store.NewRedisCache(conf.DBAddr)
 	panicErr(err)
 
-	tt = tiktok.NewServiceApi(conf.TikTokUsername, 10)
-
 	logger, err = zap.NewProduction()
 	panicErr(err)
+
+	tt = tiktok.NewServiceApi(conf.TikTokUsername, 10, logger)
 
 	w := worker.Worker{
 		TikTok:   tt,
