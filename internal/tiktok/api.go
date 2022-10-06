@@ -42,6 +42,7 @@ type likedVideoResponse struct {
 type videoInfoResponse struct {
 	Message string `json:"msg"`
 	Data    struct {
+		Title       string `json:"title"`
 		HDLink      string `json:"hdplay"`
 		OriginCover string `json:"origin_cover"`
 		RegularLink string `json:"play"`
@@ -124,6 +125,7 @@ func (sa *ServiceApi) SetVideoMetadata(video *Video) error {
 	video.DownloadLink = result.Data.RegularLink
 	video.AuthorUsername = result.Data.Author.ID
 	video.Cover = result.Data.OriginCover
+	video.Title = result.Data.Title
 	video.ShareableLink = sa.constructShareLink(video.AuthorUsername, video.ID)
 	return nil
 }
