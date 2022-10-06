@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/telebot.v3"
 )
+
+var tiktokVideo = regexp.MustCompile(`(?m)vm\.tiktok\.com/.+`)
 
 type Bot struct {
 	Bot    *telebot.Bot
@@ -30,6 +33,7 @@ type Worker struct {
 
 func (w *Worker) Start() {
 	defer w.WG.Done()
+	go w.HandleTelegramQueries()
 
 LOOP:
 	for {
@@ -82,6 +86,7 @@ LOOP:
 
 		case <-w.QuitChan:
 			w.Tick.Stop()
+			w.TG.Bot.Stop()
 			break LOOP
 		}
 	}
@@ -89,4 +94,42 @@ LOOP:
 
 func (w *Worker) Stop() {
 	w.QuitChan <- struct{}{}
+}
+
+func (w *Worker) HandleTelegramQueries() {
+	w.TG.Bot.Handle(telebot.OnQuery, func(c telebot.Context) error {
+		var (
+			video tiktok.Video
+			query = c.Query()
+		)
+		video.ID = query.Text
+		if !tiktokVideo.Match([]byte(video.ID)) {
+			return nil
+		}
+		err := w.TikTok.SetVideoMetadata(&video)
+		if err != nil {
+			w.Log.Error("HandleTelegramQueries SetVideoMetadata problem", zap.Error(err))
+			return err
+		}
+		w.Log.Info("HandleTelegramQueries processing", zap.String("req", video.ID), zap.String("User", query.Sender.Username),
+			zap.String("Name", query.Sender.FirstName+" "+query.Sender.LastName))
+
+		results := telebot.Results{
+			&telebot.VideoResult{
+				ThumbURL: video.Cover,
+				URL:      video.DownloadLink,
+				Caption:  fmt.Sprintf("@%s: %s", video.AuthorUsername, video.Title),
+				MIME:     "video/mp4",
+				Title:    fmt.Sprintf("@%s: %s", video.AuthorUsername, video.Title),
+			},
+		}
+		results[0].SetResultID("0")
+
+		return c.Answer(&telebot.QueryResponse{
+			Results:   results,
+			CacheTime: 60,
+		})
+	})
+
+	w.TG.Bot.Start()
 }
