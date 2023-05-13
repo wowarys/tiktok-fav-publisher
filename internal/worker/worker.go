@@ -13,7 +13,7 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
-var tiktokVideo = regexp.MustCompile(`(?m)vm\.tiktok\.com/.+`)
+var tiktokVideo = regexp.MustCompile(`(?m)(vm|www)\.tiktok\.com/.+`)
 
 type Bot struct {
 	Bot    *telebot.Bot
